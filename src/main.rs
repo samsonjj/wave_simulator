@@ -2,6 +2,7 @@ use macroquad::prelude::*;
 
 mod control_panel;
 mod debugger;
+mod field;
 mod game;
 mod observer;
 

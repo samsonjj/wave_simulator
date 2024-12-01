@@ -46,8 +46,6 @@ impl crate::observer::Observer for Debugger {
             self.println(format!("Step: {}", game.step).as_str());
             self.println(format!("Time Elapsed: {:?}", game.start_time.elapsed()).as_str());
             self.println(format!("Framerate: {:?}", self.frame_rate).as_str());
-
-            dbg!(&self.text);
         }
     }
     fn render(&self, _game: &Game) {
