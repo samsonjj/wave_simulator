@@ -1,12 +1,20 @@
 use macroquad::prelude::*;
 
+mod control_panel;
+mod debugger;
 mod game;
+mod observer;
 
+use control_panel::ControlPanel;
+use debugger::Debugger;
 use game::Game;
+use observer::Observer;
 
 #[macroquad::main("MyGame")]
 async fn main() {
-    let mut game = Game::new(false);
+    let mut game = Game::new();
+    let mut observers: Vec<Box<dyn Observer>> =
+        vec![Box::new(Debugger::new(true)), Box::new(ControlPanel::new())];
     loop {
         clear_background(WHITE);
 
@@ -15,7 +23,13 @@ async fn main() {
 
         // draw_text("Hello, Macroquad!", 20.0, 20.0, 30.0, DARKGRAY);
         game.update();
+        for observer in observers.iter_mut() {
+            observer.update(&game);
+        }
         game.render();
+        for observer in observers.iter() {
+            observer.render(&game);
+        }
 
         next_frame().await
     }

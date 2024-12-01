@@ -1,31 +1,52 @@
+use std::time::Instant;
+
 use macroquad::prelude::*;
+use miniquad::window::quit;
+
+#[derive(PartialEq, Eq)]
+pub enum GameState {
+    Running,
+    Paused,
+}
 
 pub struct Game {
-    field: Field,
-    debug: bool,
-    step: i32,
+    pub field: Field,
+    pub state: GameState,
+    pub step: i32,
+    pub just_updated: bool,
+    pub start_time: Instant,
 }
 
 impl Game {
-    pub fn new(debug: bool) -> Game {
+    pub fn new() -> Game {
         Game {
             field: Field::new(),
-            debug,
+            state: GameState::Paused,
             step: 0,
+            just_updated: false,
+            start_time: Instant::now(),
         }
     }
     pub fn update(&mut self) {
-        let should_update = if self.debug {
-            is_key_pressed(KeyCode::Space)
-        } else {
+        if is_key_pressed(KeyCode::Space) {
+            self.state = match self.state {
+                GameState::Running => GameState::Paused,
+                GameState::Paused => GameState::Running,
+            }
+        }
+        let should_update = if self.state == GameState::Running {
             true
+        } else if is_key_pressed(KeyCode::Period) {
+            true
+        } else {
+            false
         };
         if should_update {
             self.field.update();
             self.step += 1;
-            println!("Step: {}", self.step);
             self.field.print();
         }
+        self.just_updated = should_update;
     }
     pub fn render(&self) {
         self.field.render();
@@ -54,7 +75,6 @@ impl Field {
             .iter()
             .map(|pixel| pixel.u)
             .collect::<Vec<f32>>();
-        dbg!(us);
     }
     fn new() -> Self {
         Self {
@@ -71,6 +91,9 @@ impl Field {
         pixels
     }
     fn update(&mut self) {
+        if is_key_pressed(KeyCode::Escape) {
+            quit();
+        }
         let mut field_deltas = vec![vec![0f32; self.width()]; self.height()];
         for j in 0..self.width() {
             field_deltas[0][j] += self.force(j, j as i32 + 1);
@@ -104,7 +127,7 @@ impl Field {
         self.pixels.len()
     }
     fn render(&self) {
-        let pixel_width = 2.0;
+        let pixel_width = 1.5;
         let pixel_height = 40.0;
         let offset_x = 50.0;
         let offset_y = 50.0;
