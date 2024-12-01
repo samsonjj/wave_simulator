@@ -3,12 +3,17 @@ use std::time::Instant;
 use macroquad::prelude::*;
 use miniquad::window::quit;
 
-use crate::field::{Field, Field1D, Field2D};
+use crate::field::{self, Field, Field1D, Field2D};
 
 #[derive(PartialEq, Eq)]
 pub enum GameState {
     Running,
     Paused,
+}
+
+pub enum FieldType {
+    Field1D,
+    Field2D,
 }
 
 pub struct Game {
@@ -20,9 +25,13 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new() -> Game {
+    pub fn new(field_type: FieldType) -> Game {
+        let field: Box<dyn Field> = match field_type {
+            FieldType::Field1D => Box::new(Field1D::new()),
+            FieldType::Field2D => Box::new(Field2D::new()),
+        };
         Game {
-            field: Box::new(Field2D::new()),
+            field,
             state: GameState::Paused,
             step: 0,
             just_updated: false,

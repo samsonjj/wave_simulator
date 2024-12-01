@@ -5,7 +5,6 @@ use macroquad::prelude::*;
 use crate::game::Game;
 
 pub struct Debugger {
-    enabled: bool,
     text: Vec<String>,
     last_frame_instant: Instant,
     frame_rate: f32,
@@ -14,9 +13,8 @@ pub struct Debugger {
 const WIDTH: f32 = 300.0;
 
 impl Debugger {
-    pub fn new(enabled: bool) -> Self {
+    pub fn new() -> Self {
         Self {
-            enabled,
             text: vec![],
             last_frame_instant: Instant::now(),
             frame_rate: 0.0,
