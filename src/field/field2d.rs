@@ -66,18 +66,20 @@ impl Field2D {
     fn pixels_centered() -> Vec<Vec<Pixel>> {
         const WIDTH: usize = 64;
         const HEIGHT: usize = 64;
-        let mut pixels = vec![vec![Pixel::zero(); WIDTH];HEIGHT ];
+        let mut pixels = vec![vec![Pixel::zero(); WIDTH]; HEIGHT];
         // pixels[HEIGHT / 2][WIDTH / 2] = Pixel { u: 5000.0, v: 0.0 };
-        let center = vec2(WIDTH as f32/ 2., HEIGHT as f32/ 2. );
+        let center = vec2(WIDTH as f32 / 2., HEIGHT as f32 / 2.);
         for i in 0..HEIGHT {
             for j in 0..WIDTH {
                 let distance = center.distance(vec2(i as f32, j as f32)) * 0.1;
                 if distance <= PI / 2. {
-                    pixels[i][j] = dbg!(Pixel{ u: 255. * distance.cos(), v: 0. });
+                    pixels[i][j] = Pixel {
+                        u: 255. * distance.cos(),
+                        v: 0.,
+                    };
                 }
             }
         }
-        dbg!((PI / 2.).cos());
         pixels
     }
     fn pixels_at_end() -> Vec<Vec<Pixel>> {

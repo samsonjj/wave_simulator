@@ -11,6 +11,7 @@ pub enum GameState {
     Paused,
 }
 
+#[derive(Copy, Clone)]
 pub enum FieldType {
     Field1D,
     Field2D,
@@ -18,6 +19,7 @@ pub enum FieldType {
 
 pub struct Game {
     pub field: Box<dyn Field>,
+    pub field_type: FieldType,
     pub state: GameState,
     pub step: i32,
     pub just_updated: bool,
@@ -26,18 +28,23 @@ pub struct Game {
 
 impl Game {
     pub fn new(field_type: FieldType) -> Game {
-        let field: Box<dyn Field> = match field_type {
-            FieldType::Field1D => Box::new(Field1D::new()),
-            FieldType::Field2D => Box::new(Field2D::new()),
-        };
         Game {
-            field,
+            field: Self::init_field(field_type),
+            field_type,
             state: GameState::Paused,
             step: 0,
             just_updated: false,
             start_time: Instant::now(),
         }
     }
+
+    pub fn init_field(field_type: FieldType) -> Box<dyn Field> {
+        match field_type {
+            FieldType::Field1D => Box::new(Field1D::new()),
+            FieldType::Field2D => Box::new(Field2D::new()),
+        }
+    }
+
     pub fn update(&mut self) {
         if is_key_pressed(KeyCode::Escape) {
             quit();
@@ -47,6 +54,9 @@ impl Game {
                 GameState::Running => GameState::Paused,
                 GameState::Paused => GameState::Running,
             }
+        }
+        if is_key_pressed(KeyCode::R) {
+            self.field = Self::init_field(self.field_type);
         }
         let should_update = if self.state == GameState::Running {
             true
