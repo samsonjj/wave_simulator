@@ -1,5 +1,5 @@
-use std::f32::consts::PI;
 use ndarray::prelude::*;
+use std::f32::consts::PI;
 
 use macroquad::prelude::*;
 
@@ -9,35 +9,43 @@ pub struct Field2D {
     u: Array2<f32>,
     v: Array2<f32>,
     vectorized: bool,
+    // texture: Texture2D,
 }
 
 impl Field for Field2D {
     fn render(&self) {
-        let pixel_width = 400. / self.width() as f32;
-        let pixel_height = 400. / self.height() as f32;
         let offset_x = 50.0;
         let offset_y = 50.0;
+
+        let mut image = Image::gen_image_color(self.width() as u16, self.height() as u16, WHITE);
 
         for i in 0..self.height() {
             for j in 0..self.width() {
                 let u = *self.u.get((i, j)).unwrap();
                 let red = u as u8;
                 let green = (-u) as u8;
-                draw_rectangle(
-                    offset_x + pixel_width * j as f32,
-                    offset_y + pixel_height * i as f32,
-                    pixel_width,
-                    pixel_height,
-                    Color::from_rgba(red, green, 0, 255),
-                );
+                image.set_pixel(i as u32, j as u32, Color::from_rgba(red, green, 0, 255));
             }
         }
+
+        let texture = Texture2D::from_image(&image);
+        draw_texture_ex(
+            &texture,
+            offset_x,
+            offset_y,
+            WHITE,
+            DrawTextureParams {
+                dest_size: Some(vec2(400., 400.)),
+                ..Default::default()
+            },
+        );
     }
 
     fn update(&mut self) {
         let mut field_deltas = vec![vec![0f32; self.width()]; self.height()];
 
         if self.vectorized {
+            // the following 4 updates ensure reflective boundaries
             let r = 1. * &self.u.slice(s![1..-1, -2..-1]);
             r.assign_to(self.u.slice_mut(s![1..-1, -1..]));
 
@@ -51,11 +59,12 @@ impl Field for Field2D {
             r.assign_to(self.u.slice_mut(s![..1, 1..-1]));
 
             let result = &self.v.slice(s![1..-1, 1..-1])
-                + (0.005 * &(-4. * &self.u.slice(s![1..-1, 1..-1])
-                + &self.u.slice(s![2.., 1..-1])
-                + &self.u.slice(s![..-2, 1..-1])
-                + &self.u.slice(s![1..-1, 2..])
-                + &self.u.slice(s![1..-1, ..-2])));
+                + (0.005
+                    * &(-4. * &self.u.slice(s![1..-1, 1..-1])
+                        + &self.u.slice(s![2.., 1..-1])
+                        + &self.u.slice(s![..-2, 1..-1])
+                        + &self.u.slice(s![1..-1, 2..])
+                        + &self.u.slice(s![1..-1, ..-2])));
 
             result.assign_to(self.v.slice_mut(s![1..-1, 1..-1]));
         } else {
@@ -80,7 +89,7 @@ impl Field for Field2D {
         }
 
         // update volocities
-                
+
         // update values
         self.u = &self.u + &self.v;
     }
@@ -94,6 +103,7 @@ impl Field2D {
             u: pixels.0,
             v: pixels.1,
             vectorized,
+            // texture:  Texture2D::from_image(&image);
             // pixels: Self::pixels_at_end(),
         }
     }
@@ -107,8 +117,7 @@ impl Field2D {
             for j in 0..WIDTH {
                 let distance = center.distance(vec2(i as f32, j as f32)) * 0.1;
                 if distance <= PI / 2. {
-                    *u.get_mut((i, j)).unwrap() =
-                        255. * distance.cos();
+                    *u.get_mut((i, j)).unwrap() = 255. * distance.cos();
                 }
             }
         }
@@ -136,7 +145,9 @@ impl Field2D {
         }
         let source = (source.0 as usize, source.1 as usize);
         // c^2
-        (0.005) * (self.u.get((source.1, source.0)).unwrap() - self.u.get((target.1, target.0)).unwrap())
+        (0.005)
+            * (self.u.get((source.1, source.0)).unwrap()
+                - self.u.get((target.1, target.0)).unwrap())
     }
     fn width(&self) -> usize {
         self.u.shape()[1]
