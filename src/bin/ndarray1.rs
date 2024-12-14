@@ -9,4 +9,5 @@ fn main() {
 
     dbg!(&a1_1 + &a1_2);
     dbg!(a1_1.slice(s![1..3]));
+    dbg!(a1_1.slice(s![1..-1]));
 }

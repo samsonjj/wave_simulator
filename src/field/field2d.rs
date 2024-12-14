@@ -34,31 +34,38 @@ impl Field for Field2D {
     }
     fn update(&mut self) {
         let mut field_deltas = vec![vec![0f32; self.width()]; self.height()];
-        for i in 0..self.height() {
-            for j in 0..self.width() {
-                field_deltas[i][j] += self.force((j, i), (j as i32 + 1, i as i32));
-                field_deltas[i][j] += self.force((j, i), (j as i32 - 1, i as i32));
-                field_deltas[i][j] += self.force((j, i), (j as i32, i as i32 - 1));
-                field_deltas[i][j] += self.force((j, i), (j as i32, i as i32 + 1));
+        // for i in 0..self.height() {
+        //     for j in 0..self.width() {
+        //         field_deltas[i][j] += self.force((j, i), (j as i32 + 1, i as i32));
+        //         field_deltas[i][j] += self.force((j, i), (j as i32 - 1, i as i32));
+        //         field_deltas[i][j] += self.force((j, i), (j as i32, i as i32 - 1));
+        //         field_deltas[i][j] += self.force((j, i), (j as i32, i as i32 + 1));
 
-                field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32, i as i32 + 2));
-                field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32, i as i32 - 2));
-                field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32 + 2, i as i32));
-                field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32 - 2, i as i32));
-            }
-        }
+        //         field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32, i as i32 + 2));
+        //         field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32, i as i32 - 2));
+        //         field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32 + 2, i as i32));
+        //         field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32 - 2, i as i32));
+        //     }
+        // }
+
         // update volocities
-        for i in 0..self.height() {
-            for j in 0..self.width() {
-                *self.v.get_mut((i, j)).unwrap() += field_deltas[i][j];
-            }
-        }
+        let result = &self.v.slice(s![1..-1, 1..-1])
+         + (0.005 * &(-4. * &self.u.slice(s![1..-1, 1..-1])
+            + &self.u.slice(s![2.., 1..-1])
+            + &self.u.slice(s![..-2, 1..-1])
+            + &self.u.slice(s![1..-1, 2..])
+            + &self.u.slice(s![1..-1, ..-2])));
+
+        result.assign_to(self.v.slice_mut(s![1..-1, 1..-1]));
+
+        // for i in 0..self.height() {
+        //     for j in 0..self.width() {
+        //         *self.v.get_mut((i, j)).unwrap() += field_deltas[i][j];
+        //     }
+        // }
+
         // update values
-        for i in 0..self.height() {
-            for j in 0..self.width() {
-                *self.u.get_mut((i, j)).unwrap() += self.v.get((i, j)).unwrap();
-            }
-        }
+        self.u = &self.u + &self.v;
     }
 }
 
