@@ -1,11 +1,13 @@
 use std::f32::consts::PI;
+use ndarray::prelude::*;
 
 use macroquad::prelude::*;
 
 use super::{Field, Pixel};
 
 pub struct Field2D {
-    pixels: Vec<Vec<Pixel>>,
+    u: Array2<f32>,
+    v: Array2<f32>,
 }
 
 impl Field for Field2D {
@@ -17,7 +19,7 @@ impl Field for Field2D {
 
         for i in 0..self.height() {
             for j in 0..self.width() {
-                let u = self.pixels[i][j].u;
+                let u = *self.u.get((i, j)).unwrap();
                 let red = u as u8;
                 let green = (-u) as u8;
                 draw_rectangle(
@@ -48,13 +50,13 @@ impl Field for Field2D {
         // update volocities
         for i in 0..self.height() {
             for j in 0..self.width() {
-                self.pixels[i][j].v += field_deltas[i][j];
+                *self.v.get_mut((i, j)).unwrap() += field_deltas[i][j];
             }
         }
         // update values
         for i in 0..self.height() {
             for j in 0..self.width() {
-                self.pixels[i][j].u += self.pixels[i][j].v;
+                *self.u.get_mut((i, j)).unwrap() += self.v.get((i, j)).unwrap();
             }
         }
     }
@@ -62,30 +64,30 @@ impl Field for Field2D {
 
 impl Field2D {
     pub fn new() -> Self {
+        let pixels = Self::pixels_centered();
         Self {
             // pixels: vec![vec![0f32; 16]]
-            pixels: Self::pixels_centered(),
+            u: pixels.0,
+            v: pixels.1,
             // pixels: Self::pixels_at_end(),
         }
     }
-    fn pixels_centered() -> Vec<Vec<Pixel>> {
+    fn pixels_centered() -> (Array2<f32>, Array2<f32>) {
         const WIDTH: usize = 64;
         const HEIGHT: usize = 64;
-        let mut pixels = vec![vec![Pixel::zero(); WIDTH]; HEIGHT];
-        // pixels[HEIGHT / 2][WIDTH / 2] = Pixel { u: 5000.0, v: 0.0 };
+        let mut u = Array2::default((WIDTH, HEIGHT));
+        let v = Array2::default((WIDTH, HEIGHT));
         let center = vec2(WIDTH as f32 / 2., HEIGHT as f32 / 2.);
         for i in 0..HEIGHT {
             for j in 0..WIDTH {
                 let distance = center.distance(vec2(i as f32, j as f32)) * 0.1;
                 if distance <= PI / 2. {
-                    pixels[i][j] = Pixel {
-                        u: 255. * distance.cos(),
-                        v: 0.,
-                    };
+                    *u.get_mut((i, j)).unwrap() =
+                        255. * distance.cos();
                 }
             }
         }
-        pixels
+        (u, v)
     }
     fn pixels_at_end() -> Vec<Vec<Pixel>> {
         let mut pixels = vec![vec![Pixel::zero(); 128]; 128];
@@ -109,12 +111,12 @@ impl Field2D {
         }
         let source = (source.0 as usize, source.1 as usize);
         // c^2
-        (0.005) * (self.pixels[source.1][source.0].u - self.pixels[target.1][target.0].u)
+        (0.005) * (self.u.get((source.1, source.0)).unwrap() - self.u.get((target.1, target.0)).unwrap())
     }
     fn width(&self) -> usize {
-        self.pixels[0].len()
+        self.u.shape()[1]
     }
     fn height(&self) -> usize {
-        self.pixels.len()
+        self.u.shape()[0]
     }
 }
