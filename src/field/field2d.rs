@@ -38,6 +38,18 @@ impl Field for Field2D {
         let mut field_deltas = vec![vec![0f32; self.width()]; self.height()];
 
         if self.vectorized {
+            let r = 1. * &self.u.slice(s![1..-1, -2..-1]);
+            r.assign_to(self.u.slice_mut(s![1..-1, -1..]));
+
+            let r = 1. * &self.u.slice(s![1..-1, 1..2]);
+            r.assign_to(self.u.slice_mut(s![1..-1, ..1]));
+
+            let r = 1. * &self.u.slice(s![-2..-1, 1..-1]);
+            r.assign_to(self.u.slice_mut(s![-1.., 1..-1]));
+
+            let r = 1. * &self.u.slice(s![1..2, 1..-1]);
+            r.assign_to(self.u.slice_mut(s![..1, 1..-1]));
+
             let result = &self.v.slice(s![1..-1, 1..-1])
                 + (0.005 * &(-4. * &self.u.slice(s![1..-1, 1..-1])
                 + &self.u.slice(s![2.., 1..-1])
@@ -86,8 +98,8 @@ impl Field2D {
         }
     }
     fn pixels_centered() -> (Array2<f32>, Array2<f32>) {
-        const WIDTH: usize = 64;
-        const HEIGHT: usize = 64;
+        const WIDTH: usize = 128;
+        const HEIGHT: usize = 128;
         let mut u = Array2::default((WIDTH, HEIGHT));
         let v = Array2::default((WIDTH, HEIGHT));
         let center = vec2(WIDTH as f32 / 2., HEIGHT as f32 / 2.);
