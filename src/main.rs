@@ -1,4 +1,3 @@
-use field::Field1D;
 use macroquad::prelude::*;
 
 mod control_panel;
@@ -25,6 +24,8 @@ async fn main() {
     let mut game = Game::new(field_type);
     let mut observers: Vec<Box<dyn Observer>> =
         vec![Box::new(Debugger::new()), Box::new(ControlPanel::new())];
+    
+    
     
     loop {
         clear_background(WHITE);

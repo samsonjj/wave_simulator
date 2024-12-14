@@ -38,6 +38,11 @@ impl Field for Field2D {
                 field_deltas[i][j] += self.force((j, i), (j as i32 - 1, i as i32));
                 field_deltas[i][j] += self.force((j, i), (j as i32, i as i32 - 1));
                 field_deltas[i][j] += self.force((j, i), (j as i32, i as i32 + 1));
+
+                field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32, i as i32 + 2));
+                field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32, i as i32 - 2));
+                field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32 + 2, i as i32));
+                field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32 - 2, i as i32));
             }
         }
         // update volocities

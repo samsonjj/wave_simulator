@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use macroquad::prelude::*;
 use miniquad::window::quit;
@@ -24,6 +24,8 @@ pub struct Game {
     pub step: i32,
     pub just_updated: bool,
     pub start_time: Instant,
+    pub rendering_duration: Duration,
+    pub update_duration: Duration,
 }
 
 impl Game {
@@ -35,6 +37,8 @@ impl Game {
             step: 0,
             just_updated: false,
             start_time: Instant::now(),
+            rendering_duration: Duration::ZERO,
+            update_duration: Duration::ZERO,
         }
     }
 
@@ -46,6 +50,7 @@ impl Game {
     }
 
     pub fn update(&mut self) {
+        let start = Instant::now();
         if is_key_pressed(KeyCode::Escape) {
             quit();
         }
@@ -70,8 +75,11 @@ impl Game {
             self.step += 1;
         }
         self.just_updated = should_update;
+        self.update_duration = start.elapsed();
     }
-    pub fn render(&self) {
+    pub fn render(&mut self) {
+        let start = Instant::now();
         self.field.render();
+        self.rendering_duration = start.elapsed();
     }
 }

@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use macroquad::prelude::*;
 
@@ -8,6 +8,8 @@ pub struct Debugger {
     text: Vec<String>,
     last_frame_instant: Instant,
     frame_rate: f32,
+    rendering_duration: Duration,
+    update_duration: Duration,
 }
 
 const WIDTH: f32 = 300.0;
@@ -18,6 +20,8 @@ impl Debugger {
             text: vec![],
             last_frame_instant: Instant::now(),
             frame_rate: 0.0,
+            rendering_duration: Duration::ZERO,
+            update_duration: Duration::ZERO,
         }
     }
     pub fn clear(&mut self) {
@@ -35,15 +39,21 @@ impl Debugger {
 impl crate::observer::Observer for Debugger {
     fn update(&mut self, game: &crate::game::Game) {
         if game.just_updated || self.text.is_empty() {
+            self.rendering_duration += game.rendering_duration;
+            self.update_duration += game.update_duration;
             if game.step % 60 == 0 {
                 self.frame_rate =
                     60.0 / self.last_frame_instant.elapsed().as_millis() as f32 * 1000.0;
                 self.last_frame_instant = Instant::now();
+                self.rendering_duration = Duration::ZERO;
+                self.update_duration = Duration::ZERO;
             }
             self.clear();
             self.println(format!("Step: {}", game.step).as_str());
             self.println(format!("Time Elapsed: {:?}", game.start_time.elapsed()).as_str());
             self.println(format!("Framerate: {:?}", self.frame_rate).as_str());
+            self.println(format!("Render Time: {:?}", self.rendering_duration.as_millis() as f32 / (game.step % 60) as f32).as_str());
+            self.println(format!("Update Time: {:?}", self.update_duration.as_millis() as f32 / (game.step % 60) as f32).as_str());
         }
     }
     fn render(&self, _game: &Game) {
