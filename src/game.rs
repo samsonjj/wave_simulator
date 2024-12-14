@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 use macroquad::prelude::*;
 use miniquad::window::quit;
 
-use crate::field::{self, Field, Field1D, Field2D};
+use crate::field::{Field, Field1D, Field2D};
 
 const UPDATES_PER_FRAME: u32 = 1;
 
@@ -75,7 +75,7 @@ impl Game {
             false
         };
         if should_update {
-            for i in 0..UPDATES_PER_FRAME {
+            for _ in 0..UPDATES_PER_FRAME {
                 self.field.update();
                 self.step += 1;
             }
