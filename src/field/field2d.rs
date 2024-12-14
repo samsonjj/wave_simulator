@@ -8,6 +8,7 @@ use super::{Field, Pixel};
 pub struct Field2D {
     u: Array2<f32>,
     v: Array2<f32>,
+    vectorized: bool,
 }
 
 impl Field for Field2D {
@@ -32,50 +33,55 @@ impl Field for Field2D {
             }
         }
     }
+
     fn update(&mut self) {
         let mut field_deltas = vec![vec![0f32; self.width()]; self.height()];
-        // for i in 0..self.height() {
-        //     for j in 0..self.width() {
-        //         field_deltas[i][j] += self.force((j, i), (j as i32 + 1, i as i32));
-        //         field_deltas[i][j] += self.force((j, i), (j as i32 - 1, i as i32));
-        //         field_deltas[i][j] += self.force((j, i), (j as i32, i as i32 - 1));
-        //         field_deltas[i][j] += self.force((j, i), (j as i32, i as i32 + 1));
 
-        //         field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32, i as i32 + 2));
-        //         field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32, i as i32 - 2));
-        //         field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32 + 2, i as i32));
-        //         field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32 - 2, i as i32));
-        //     }
-        // }
+        if self.vectorized {
+            let result = &self.v.slice(s![1..-1, 1..-1])
+                + (0.005 * &(-4. * &self.u.slice(s![1..-1, 1..-1])
+                + &self.u.slice(s![2.., 1..-1])
+                + &self.u.slice(s![..-2, 1..-1])
+                + &self.u.slice(s![1..-1, 2..])
+                + &self.u.slice(s![1..-1, ..-2])));
+
+            result.assign_to(self.v.slice_mut(s![1..-1, 1..-1]));
+        } else {
+            for i in 0..self.height() {
+                for j in 0..self.width() {
+                    field_deltas[i][j] += self.force((j, i), (j as i32 + 1, i as i32));
+                    field_deltas[i][j] += self.force((j, i), (j as i32 - 1, i as i32));
+                    field_deltas[i][j] += self.force((j, i), (j as i32, i as i32 - 1));
+                    field_deltas[i][j] += self.force((j, i), (j as i32, i as i32 + 1));
+
+                    field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32, i as i32 + 2));
+                    field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32, i as i32 - 2));
+                    field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32 + 2, i as i32));
+                    field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32 - 2, i as i32));
+                }
+            }
+            for i in 0..self.height() {
+                for j in 0..self.width() {
+                    *self.v.get_mut((i, j)).unwrap() += field_deltas[i][j];
+                }
+            }
+        }
 
         // update volocities
-        let result = &self.v.slice(s![1..-1, 1..-1])
-         + (0.005 * &(-4. * &self.u.slice(s![1..-1, 1..-1])
-            + &self.u.slice(s![2.., 1..-1])
-            + &self.u.slice(s![..-2, 1..-1])
-            + &self.u.slice(s![1..-1, 2..])
-            + &self.u.slice(s![1..-1, ..-2])));
-
-        result.assign_to(self.v.slice_mut(s![1..-1, 1..-1]));
-
-        // for i in 0..self.height() {
-        //     for j in 0..self.width() {
-        //         *self.v.get_mut((i, j)).unwrap() += field_deltas[i][j];
-        //     }
-        // }
-
+                
         // update values
         self.u = &self.u + &self.v;
     }
 }
 
 impl Field2D {
-    pub fn new() -> Self {
+    pub fn new(vectorized: bool) -> Self {
         let pixels = Self::pixels_centered();
         Self {
             // pixels: vec![vec![0f32; 16]]
             u: pixels.0,
             v: pixels.1,
+            vectorized,
             // pixels: Self::pixels_at_end(),
         }
     }

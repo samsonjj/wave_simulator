@@ -31,7 +31,7 @@ pub struct Game {
 impl Game {
     pub fn new(field_type: FieldType) -> Game {
         Game {
-            field: Self::init_field(field_type),
+            field: Self::init_field(field_type, false),
             field_type,
             state: GameState::Paused,
             step: 0,
@@ -42,10 +42,10 @@ impl Game {
         }
     }
 
-    pub fn init_field(field_type: FieldType) -> Box<dyn Field> {
+    pub fn init_field(field_type: FieldType, vectorized: bool) -> Box<dyn Field> {
         match field_type {
             FieldType::Field1D => Box::new(Field1D::new()),
-            FieldType::Field2D => Box::new(Field2D::new()),
+            FieldType::Field2D => Box::new(Field2D::new(vectorized)),
         }
     }
 
@@ -61,7 +61,9 @@ impl Game {
             }
         }
         if is_key_pressed(KeyCode::R) {
-            self.field = Self::init_field(self.field_type);
+            self.field = Self::init_field(self.field_type, false);
+        } else if is_key_pressed(KeyCode::T) {
+            self.field = Self::init_field(self.field_type, true);
         }
         let should_update = if self.state == GameState::Running {
             true
