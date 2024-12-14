@@ -5,11 +5,12 @@ use macroquad::prelude::*;
 
 use super::{Field, Pixel};
 
+const PROPAGATION_SPEED: f32 = 0.5;
+
 pub struct Field2D {
     u: Array2<f32>,
     v: Array2<f32>,
     vectorized: bool,
-    // texture: Texture2D,
 }
 
 impl Field for Field2D {
@@ -59,7 +60,7 @@ impl Field for Field2D {
             r.assign_to(self.u.slice_mut(s![..1, 1..-1]));
 
             let result = &self.v.slice(s![1..-1, 1..-1])
-                + (0.005
+                + (PROPAGATION_SPEED
                     * &(-4. * &self.u.slice(s![1..-1, 1..-1])
                         + &self.u.slice(s![2.., 1..-1])
                         + &self.u.slice(s![..-2, 1..-1])
@@ -99,17 +100,15 @@ impl Field2D {
     pub fn new(vectorized: bool) -> Self {
         let pixels = Self::pixels_centered();
         Self {
-            // pixels: vec![vec![0f32; 16]]
             u: pixels.0,
             v: pixels.1,
             vectorized,
-            // texture:  Texture2D::from_image(&image);
             // pixels: Self::pixels_at_end(),
         }
     }
     fn pixels_centered() -> (Array2<f32>, Array2<f32>) {
-        const WIDTH: usize = 128;
-        const HEIGHT: usize = 128;
+        const WIDTH: usize = 64;
+        const HEIGHT: usize = 64;
         let mut u = Array2::default((WIDTH, HEIGHT));
         let v = Array2::default((WIDTH, HEIGHT));
         let center = vec2(WIDTH as f32 / 2., HEIGHT as f32 / 2.);
@@ -145,7 +144,7 @@ impl Field2D {
         }
         let source = (source.0 as usize, source.1 as usize);
         // c^2
-        (0.005)
+        PROPAGATION_SPEED
             * (self.u.get((source.1, source.0)).unwrap()
                 - self.u.get((target.1, target.0)).unwrap())
     }

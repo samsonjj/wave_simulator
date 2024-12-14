@@ -3,11 +3,12 @@ use std::time::{Duration, Instant};
 use macroquad::prelude::*;
 
 use crate::game::Game;
+use crate::monitor::Monitor;
 
 pub struct Debugger {
     text: Vec<String>,
     last_frame_instant: Instant,
-    frame_rate: f32,
+    frame_time_monitor: Monitor,
     rendering_duration: Duration,
     update_duration: Duration,
 }
@@ -19,7 +20,7 @@ impl Debugger {
         Self {
             text: vec![],
             last_frame_instant: Instant::now(),
-            frame_rate: 0.0,
+            frame_time_monitor: Monitor::new(),
             rendering_duration: Duration::ZERO,
             update_duration: Duration::ZERO,
         }
@@ -36,24 +37,28 @@ impl Debugger {
     }
 }
 
+const FRAME_RATE_WINDOW: usize = 120;
+
 impl crate::observer::Observer for Debugger {
     fn update(&mut self, game: &crate::game::Game) {
         if game.just_updated || self.text.is_empty() {
             self.rendering_duration += game.rendering_duration;
             self.update_duration += game.update_duration;
+            self.frame_time_monitor.inc(self.last_frame_instant.elapsed().as_secs_f32());
+
             if game.step % 60 == 0 {
-                self.frame_rate =
-                    60.0 / self.last_frame_instant.elapsed().as_millis() as f32 * 1000.0;
                 self.last_frame_instant = Instant::now();
                 self.rendering_duration = Duration::ZERO;
                 self.update_duration = Duration::ZERO;
             }
             self.clear();
             self.println(format!("Step: {}", game.step).as_str());
-            self.println(format!("Time Elapsed: {:?}", game.start_time.elapsed()).as_str());
-            self.println(format!("Framerate: {:?}", self.frame_rate).as_str());
-            self.println(format!("Render Time: {:?}", self.rendering_duration.as_millis() as f32 / (game.step % 60) as f32).as_str());
-            self.println(format!("Update Time: {:?}", self.update_duration.as_millis() as f32 / (game.step % 60) as f32).as_str());
+            self.println(format!("Time Elapsed: {:.2}s", game.start_time.elapsed().as_millis() as f32 * 0.001).as_str());
+            self.println(format!("Framerate: {:.0?}/s", 1. / self.frame_time_monitor.display_val).as_str());
+            self.println(format!("Render Time: {:.2}ms", self.rendering_duration.as_micros() as f32 * 0.001 / (game.step % 60) as f32).as_str());
+            self.println(format!("Update Time: {:.2}ms", self.update_duration.as_micros() as f32 * 0.001 / (game.step % 60) as f32).as_str());
+            
+            self.last_frame_instant = Instant::now();
         }
     }
     fn render(&self, _game: &Game) {

@@ -5,6 +5,7 @@ mod debugger;
 mod field;
 mod game;
 mod observer;
+mod monitor;
 
 use control_panel::ControlPanel;
 use debugger::Debugger;
@@ -25,7 +26,7 @@ async fn main() {
     let mut observers: Vec<Box<dyn Observer>> =
         vec![Box::new(Debugger::new()), Box::new(ControlPanel::new())];
     
-    
+
     
     loop {
         clear_background(WHITE);

@@ -5,6 +5,8 @@ use miniquad::window::quit;
 
 use crate::field::{self, Field, Field1D, Field2D};
 
+const UPDATES_PER_FRAME: u32 = 1;
+
 #[derive(PartialEq, Eq)]
 pub enum GameState {
     Running,
@@ -73,8 +75,10 @@ impl Game {
             false
         };
         if should_update {
-            self.field.update();
-            self.step += 1;
+            for i in 0..UPDATES_PER_FRAME {
+                self.field.update();
+                self.step += 1;
+            }
         }
         self.just_updated = should_update;
         self.update_duration = start.elapsed();
