@@ -5,7 +5,7 @@ use macroquad::prelude::*;
 
 use super::{Field, Pixel};
 
-const PROPAGATION_SPEED: f32 = 0.5;
+const PROPAGATION_SPEED: f32 = 0.01;
 
 pub struct Field2D {
     u: Array2<f32>,
@@ -20,12 +20,12 @@ impl Field for Field2D {
 
         let mut image = Image::gen_image_color(self.width() as u16, self.height() as u16, WHITE);
 
-        for i in 0..self.height() {
-            for j in 0..self.width() {
-                let u = *self.u.get((i, j)).unwrap();
+        for y in 0..self.height() {
+            for x in 0..self.width() {
+                let u = *self.u.get((x, y)).unwrap();
                 let red = u as u8;
                 let green = (-u) as u8;
-                image.set_pixel(i as u32, j as u32, Color::from_rgba(red, green, 0, 255));
+                image.set_pixel(x as u32, y as u32, Color::from_rgba(red, green, 0, 255));
             }
         }
 
@@ -43,7 +43,7 @@ impl Field for Field2D {
     }
 
     fn update(&mut self) {
-        let mut field_deltas = vec![vec![0f32; self.width()]; self.height()];
+        let mut field_deltas = vec![vec![0f32; self.height()]; self.width()];
 
         if self.vectorized {
             // the following 4 updates ensure reflective boundaries
@@ -69,22 +69,22 @@ impl Field for Field2D {
 
             result.assign_to(self.v.slice_mut(s![1..-1, 1..-1]));
         } else {
-            for i in 0..self.height() {
-                for j in 0..self.width() {
-                    field_deltas[i][j] += self.force((j, i), (j as i32 + 1, i as i32));
-                    field_deltas[i][j] += self.force((j, i), (j as i32 - 1, i as i32));
-                    field_deltas[i][j] += self.force((j, i), (j as i32, i as i32 - 1));
-                    field_deltas[i][j] += self.force((j, i), (j as i32, i as i32 + 1));
+            for x in 0..self.width() {
+                for y in 0..self.height() {
+                    field_deltas[x][y] += self.force((x, y), (x as i32 + 1, y as i32));
+                    field_deltas[x][y] += self.force((x, y), (x as i32 - 1, y as i32));
+                    field_deltas[x][y] += self.force((x, y), (x as i32, y as i32 - 1));
+                    field_deltas[x][y] += self.force((x, y), (x as i32, y as i32 + 1));
 
-                    field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32, i as i32 + 2));
-                    field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32, i as i32 - 2));
-                    field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32 + 2, i as i32));
-                    field_deltas[i][j] += 0.0625 * self.force((j, i), (j as i32 - 2, i as i32));
+                    field_deltas[x][y] += 0.0625 * self.force((x, y), (x as i32, y as i32 + 2));
+                    field_deltas[x][y] += 0.0625 * self.force((x, y), (x as i32, y as i32 - 2));
+                    field_deltas[x][y] += 0.0625 * self.force((x, y), (x as i32 + 2, y as i32));
+                    field_deltas[x][y] += 0.0625 * self.force((x, y), (x as i32 - 2, y as i32));
                 }
             }
-            for i in 0..self.height() {
-                for j in 0..self.width() {
-                    *self.v.get_mut((i, j)).unwrap() += field_deltas[i][j];
+            for y in 0..self.height() {
+                for x in 0..self.width() {
+                    *self.v.get_mut((x, y)).unwrap() += field_deltas[x][y];
                 }
             }
         }
@@ -98,17 +98,18 @@ impl Field for Field2D {
 
 impl Field2D {
     pub fn new(vectorized: bool) -> Self {
-        let pixels = Self::pixels_centered();
+        let pixels = Self::pixels_centered(64, 63);
         Self {
             u: pixels.0,
             v: pixels.1,
             vectorized,
-            // pixels: Self::pixels_at_end(),
         }
     }
-    fn pixels_centered() -> (Array2<f32>, Array2<f32>) {
-        const WIDTH: usize = 64;
-        const HEIGHT: usize = 64;
+    fn pixels_centered(width: usize, height: usize) -> (Array2<f32>, Array2<f32>) {
+        // const WIDTH: usize = 64;
+        // const HEIGHT: usize = 64;
+        let WIDTH = width;
+        let HEIGHT = height;
         let mut u = Array2::default((WIDTH, HEIGHT));
         let v = Array2::default((WIDTH, HEIGHT));
         let center = vec2(WIDTH as f32 / 2., HEIGHT as f32 / 2.);
@@ -145,13 +146,13 @@ impl Field2D {
         let source = (source.0 as usize, source.1 as usize);
         // c^2
         PROPAGATION_SPEED
-            * (self.u.get((source.1, source.0)).unwrap()
-                - self.u.get((target.1, target.0)).unwrap())
+            * (self.u.get((source.0, source.1)).unwrap()
+                - self.u.get((target.0, target.1)).unwrap())
     }
     fn width(&self) -> usize {
-        self.u.shape()[1]
+        self.u.shape()[0]
     }
     fn height(&self) -> usize {
-        self.u.shape()[0]
+        self.u.shape()[1]
     }
 }
