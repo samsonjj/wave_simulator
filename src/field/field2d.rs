@@ -40,6 +40,26 @@ impl Field for Field2D {
                 ..Default::default()
             },
         );
+
+
+        let mut graph_image = Image::gen_image_color(self.width() as u16, 128, BLACK);
+        let center_y = self.height() / 2;
+        for x in 0..self.width() {
+            let y = (*self.u.get((x, center_y)).unwrap() / 4.1 + 64.) as u32;
+            graph_image.set_pixel(x as u32, y, RED); 
+        }
+
+        let texture = Texture2D::from_image(&graph_image);
+        draw_texture_ex(
+            &texture,
+            offset_x,
+            offset_y + 450.,
+            WHITE,
+            DrawTextureParams {
+                dest_size: Some(vec2(400., 400.)),
+                ..Default::default()
+            },
+        );
     }
 
     fn update(&mut self) {
@@ -89,16 +109,13 @@ impl Field for Field2D {
             }
         }
 
-        // update volocities
-
-        // update values
         self.u = &self.u + &self.v;
     }
 }
 
 impl Field2D {
     pub fn new(vectorized: bool) -> Self {
-        let pixels = Self::pixels_centered(64, 63);
+        let pixels = Self::standing(256, 3);
         Self {
             u: pixels.0,
             v: pixels.1,
@@ -106,26 +123,34 @@ impl Field2D {
         }
     }
     fn pixels_centered(width: usize, height: usize) -> (Array2<f32>, Array2<f32>) {
-        // const WIDTH: usize = 64;
-        // const HEIGHT: usize = 64;
-        let WIDTH = width;
-        let HEIGHT = height;
-        let mut u = Array2::default((WIDTH, HEIGHT));
-        let v = Array2::default((WIDTH, HEIGHT));
-        let center = vec2(WIDTH as f32 / 2., HEIGHT as f32 / 2.);
-        for i in 0..HEIGHT {
-            for j in 0..WIDTH {
-                let distance = center.distance(vec2(i as f32, j as f32)) * 0.1;
-                if distance <= PI / 2. {
-                    *u.get_mut((i, j)).unwrap() = 255. * distance.cos();
-                }
+        let center = vec2(width as f32 / 2., height as f32 / 2.);
+        let f = |x: usize, y: usize| {
+            let distance = center.distance(vec2(x as f32, y as f32)) * 0.1;
+            if distance <= PI / 2. {
+                255. * distance.cos()
+            } else { 0. }
+        };
+        Self::pixels_from_fn(width, height, f, |_, _| 0.)
+    }
+    fn standing(width: usize, height: usize) -> (Array2<f32>, Array2<f32>) {
+        let f = |x: usize, y: usize| {
+            255. * (x as f32 / 64. * PI).cos()
+        };
+        Self::pixels_from_fn(width, height, f, |_, _| 0.)
+    }
+    fn pixels_from_fn(width: usize, height: usize, u_fun: impl Fn(usize, usize) -> f32, v_fun: impl Fn(usize, usize) -> f32) ->(Array2<f32>, Array2<f32>) { 
+        let mut u = Array2::default((width, height));
+        let mut v = Array2::default((width, height));
+        for x in 0..width {
+            for y in 0..height {
+                *u.get_mut((x, y)).unwrap() = u_fun(x, y);
+                *v.get_mut((x, y)).unwrap() = v_fun(x, y);
             }
         }
         (u, v)
     }
     fn pixels_at_end() -> Vec<Vec<Pixel>> {
         let mut pixels = vec![vec![Pixel::zero(); 128]; 128];
-        // let half = pixels[0].len() / 2;
         for j in 0..20 {
             pixels[0][j] = Pixel {
                 u: (j as f32 * PI * 0.025).cos() * 255.0,

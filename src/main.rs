@@ -4,15 +4,22 @@ mod control_panel;
 mod debugger;
 mod field;
 mod game;
-mod observer;
 mod monitor;
+mod observer;
 
 use control_panel::ControlPanel;
 use debugger::Debugger;
 use game::{FieldType, Game};
 use observer::Observer;
 
-#[macroquad::main("MyGame")]
+fn window_conf() -> macroquad::window::Conf {
+    Conf {
+        window_height: 1000,
+        ..Default::default()
+    }
+}
+
+#[macroquad::main(window_conf)]
 async fn main() {
     let args: Vec<String> = std::env::args().into_iter().collect();
 
@@ -25,9 +32,7 @@ async fn main() {
     let mut game = Game::new(field_type);
     let mut observers: Vec<Box<dyn Observer>> =
         vec![Box::new(Debugger::new()), Box::new(ControlPanel::new())];
-    
 
-    
     loop {
         clear_background(WHITE);
 

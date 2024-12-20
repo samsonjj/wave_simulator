@@ -5,7 +5,7 @@ use miniquad::window::quit;
 
 use crate::field::{Field, Field1D, Field2D};
 
-const UPDATES_PER_FRAME: u32 = 1;
+const UPDATES_PER_FRAME: u32 = 10;
 
 #[derive(PartialEq, Eq)]
 pub enum GameState {
