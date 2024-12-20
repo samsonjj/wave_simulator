@@ -2,6 +2,7 @@
 name = "pixel_wave_simulator"
 version = "0.1.0"
 edition = "2021"
+default-run = "main"
 
 [dependencies]
 macroquad = "0.4.13"
