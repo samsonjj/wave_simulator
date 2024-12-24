@@ -5,11 +5,13 @@ use macroquad::prelude::*;
 
 use super::{Field, Pixel};
 
-const PROPAGATION_SPEED: f32 = 0.01;
+const PROPAGATION_SPEED: f32 = 0.001;
+const TIME_STEP: f32 = 1.;
 
 pub struct Field2D {
     u: Array2<f32>,
     v: Array2<f32>,
+    time: f32,
     vectorized: bool,
 }
 
@@ -45,8 +47,10 @@ impl Field for Field2D {
         let mut graph_image = Image::gen_image_color(self.width() as u16, 128, BLACK);
         let center_y = self.height() / 2;
         for x in 0..self.width() {
-            let y = (*self.u.get((x, center_y)).unwrap() / 4.1 + 64.) as u32;
-            graph_image.set_pixel(x as u32, y, RED); 
+            let yx = (*self.u.get((x, center_y)).unwrap() / 7.1 + 64.) as u32;
+            let yv = ((*self.v.get((x, center_y)).unwrap() * 16.) + 64.) as u32;
+            graph_image.set_pixel(x as u32, yx, RED); 
+            graph_image.set_pixel(x as u32, yv, GREEN); 
         }
 
         let texture = Texture2D::from_image(&graph_image);
@@ -63,7 +67,11 @@ impl Field for Field2D {
     }
 
     fn update(&mut self) {
+        self.time += TIME_STEP;
         let mut field_deltas = vec![vec![0f32; self.height()]; self.width()];
+
+        // create disturbance over time
+        *self.u.get_mut((0, 0)).unwrap() = (self.time / 100.).sin() * 64.;
 
         if self.vectorized {
             // the following 4 updates ensure reflective boundaries
@@ -115,20 +123,46 @@ impl Field for Field2D {
 
 impl Field2D {
     pub fn new(vectorized: bool) -> Self {
-        let pixels = Self::standing(256, 3);
+        let pixels = Self::zero(64, 3);
         Self {
             u: pixels.0,
             v: pixels.1,
+            time: 0.,
             vectorized,
         }
     }
+
+    fn add_disturbance(mouse_pos: Vec2) {
+        let pixels_centered = Self::pixels_centered(64, 64);
+    }
+
     fn pixels_centered(width: usize, height: usize) -> (Array2<f32>, Array2<f32>) {
         let center = vec2(width as f32 / 2., height as f32 / 2.);
         let f = |x: usize, y: usize| {
-            let distance = center.distance(vec2(x as f32, y as f32)) * 0.1;
+            let distance = center.distance(vec2(x as f32, y as f32)) * 0.3;
+            if distance <= PI / 2. {
+                128. * distance.cos()
+            } else { 0. }
+        };
+        let v = |x: usize, y: usize| {
+            let distance = center.distance(vec2(x as f32, y as f32)) * 0.3;
             if distance <= PI / 2. {
                 255. * distance.cos()
             } else { 0. }
+        };
+        Self::pixels_from_fn(width, height, f, |_, _| 0.)
+    }
+    fn zero(width: usize, height: usize) -> (Array2<f32>, Array2<f32>) {
+        Self::pixels_from_fn(width, height, |_, _| 0., |_, _| 0.)
+    }
+    fn traveling(width: usize, height: usize) -> (Array2<f32>, Array2<f32>) {
+        let f = |x: usize, y: usize| {
+            let d = (x as f32 - (width  as f32 / 2.0)) / 10.0;
+            if d.abs() < PI / 2. {
+                255. * (d.cos())
+            } else {
+                0.
+            }
         };
         Self::pixels_from_fn(width, height, f, |_, _| 0.)
     }

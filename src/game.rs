@@ -67,6 +67,11 @@ impl Game {
         } else if is_key_pressed(KeyCode::T) {
             self.field = Self::init_field(self.field_type, true);
         }
+
+        if is_mouse_button_pressed(MouseButton::Left) {
+            // self.field.(mouse_position());
+        }
+
         let should_update = if self.state == GameState::Running {
             true
         } else if is_key_pressed(KeyCode::Period) {
@@ -83,6 +88,7 @@ impl Game {
         self.just_updated = should_update;
         self.update_duration = start.elapsed();
     }
+
     pub fn render(&mut self) {
         let start = Instant::now();
         self.field.render();
