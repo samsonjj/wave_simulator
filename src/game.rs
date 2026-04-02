@@ -5,7 +5,8 @@ use miniquad::window::quit;
 
 use crate::field::{Field, Field1D, Field1DInit, Field2D, Field2DInit};
 
-const UPDATES_PER_FRAME: u32 = 10;
+const MIN_UPDATES_PER_FRAME: u32 = 1;
+const MAX_UPDATES_PER_FRAME: u32 = 256;
 
 #[derive(PartialEq, Eq)]
 pub enum GameState {
@@ -50,6 +51,7 @@ pub struct Game {
     pub rendering_duration: Duration,
     pub update_duration: Duration,
     pub init_variant: InitVariant,
+    pub updates_per_frame: u32,
 }
 
 impl Game {
@@ -68,6 +70,7 @@ impl Game {
             rendering_duration: Duration::ZERO,
             update_duration: Duration::ZERO,
             init_variant,
+            updates_per_frame: 4,
         }
     }
 
@@ -104,6 +107,12 @@ impl Game {
             self.step = 0;
         }
 
+        if is_key_pressed(KeyCode::Equal) {
+            self.updates_per_frame = (self.updates_per_frame * 2).min(MAX_UPDATES_PER_FRAME);
+        } else if is_key_pressed(KeyCode::Minus) {
+            self.updates_per_frame = (self.updates_per_frame / 2).max(MIN_UPDATES_PER_FRAME);
+        }
+
         if is_mouse_button_pressed(MouseButton::Left) {
             // self.field.(mouse_position());
         }
@@ -116,7 +125,7 @@ impl Game {
             false
         };
         if should_update {
-            for _ in 0..UPDATES_PER_FRAME {
+            for _ in 0..self.updates_per_frame {
                 self.field.update();
                 self.step += 1;
             }
