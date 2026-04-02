@@ -56,7 +56,7 @@ impl Game {
     pub fn new(field_type: FieldType) -> Game {
         let init_variant = match field_type {
             FieldType::Field1D => InitVariant::Field1D(Field1DInit::AtEnd),
-            FieldType::Field2D => InitVariant::Field2D(Field2DInit::Zero),
+            FieldType::Field2D => InitVariant::Field2D(Field2DInit::Standing),
         };
         Game {
             field: Self::init_field(field_type, false, init_variant),

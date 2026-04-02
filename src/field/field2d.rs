@@ -5,13 +5,11 @@ use macroquad::prelude::*;
 
 use super::{Field, Pixel};
 
-const PROPAGATION_SPEED: f32 = 0.001;
-const TIME_STEP: f32 = 1.;
+const PROPAGATION_SPEED: f32 = 0.01;
 
 pub struct Field2D {
     u: Array2<f32>,
     v: Array2<f32>,
-    time: f32,
     vectorized: bool,
 }
 
@@ -66,11 +64,7 @@ impl Field for Field2D {
     }
 
     fn update(&mut self) {
-        self.time += TIME_STEP;
         let mut field_deltas = vec![vec![0f32; self.height()]; self.width()];
-
-        // create disturbance over time
-        *self.u.get_mut((0, 0)).unwrap() = (self.time / 100.).sin() * 64.;
 
         if self.vectorized {
             // the following 4 updates ensure reflective boundaries
@@ -150,15 +144,14 @@ impl Field2DInit {
 impl Field2D {
     pub fn new(vectorized: bool, init: Field2DInit) -> Self {
         let pixels = match init {
-            Field2DInit::Zero => Self::zero(64, 64),
+            Field2DInit::Zero => Self::zero(64, 3),
             Field2DInit::Centered => Self::pixels_centered(64, 64),
-            Field2DInit::Traveling => Self::traveling(64, 64),
-            Field2DInit::Standing => Self::standing(64, 64),
+            Field2DInit::Traveling => Self::traveling(64, 3),
+            Field2DInit::Standing => Self::standing(64, 3),
         };
         Self {
             u: pixels.0,
             v: pixels.1,
-            time: 0.,
             vectorized,
         }
     }
@@ -170,19 +163,13 @@ impl Field2D {
     fn pixels_centered(width: usize, height: usize) -> (Array2<f32>, Array2<f32>) {
         let center = vec2(width as f32 / 2., height as f32 / 2.);
         let f = |x: usize, y: usize| {
-            let distance = center.distance(vec2(x as f32, y as f32)) * 0.3;
+            let distance = center.distance(vec2(x as f32, y as f32)) * 0.1;
             if distance <= PI / 2. {
-                128. * distance.cos()
+                255. * distance.cos()
             } else {
                 0.
             }
         };
-        // let v = |x: usize, y: usize| {
-        //     let distance = center.distance(vec2(x as f32, y as f32)) * 0.3;
-        //     if distance <= PI / 2. {
-        //         255. * distance.cos()
-        //     } else { 0. }
-        // };
         Self::pixels_from_fn(width, height, f, |_, _| 0.)
     }
     fn zero(width: usize, height: usize) -> (Array2<f32>, Array2<f32>) {
