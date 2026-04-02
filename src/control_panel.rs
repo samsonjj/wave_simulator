@@ -17,6 +17,7 @@ const SHORTCUTS: &[(&str, &str)] = &[
     ("R", "Reset"),
     ("T", "Reset (vec)"),
     ("N", "Next init"),
+    ("-/+", "Speed"),
     (".", "Step"),
     ("Esc", "Quit"),
 ];
@@ -49,12 +50,13 @@ impl Observer for ControlPanel {
 
         // Status on the right
         let status = format!(
-            "{} | init: {}",
+            "{} | init: {} | speed: {}x",
             match game.state {
                 GameState::Running => "Running",
                 GameState::Paused => "Paused",
             },
-            game.init_variant.label()
+            game.init_variant.label(),
+            game.updates_per_frame,
         );
         let status_dims = measure_text(&status, None, FONT_SIZE as u16, 1.0);
         draw_text(&status, screen_width() - status_dims.width - KEY_PADDING, text_y, FONT_SIZE, BLACK);

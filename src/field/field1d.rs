@@ -9,7 +9,7 @@ pub struct Field1D {
 }
 
 impl Field for Field1D {
-    fn render(&self) {
+    fn render(&mut self) {
         let pixel_width = 1.5;
         let pixel_height = 40.0;
         let offset_x = 50.0;

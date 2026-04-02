@@ -11,27 +11,29 @@ pub struct Field2D {
     u: Array2<f32>,
     v: Array2<f32>,
     vectorized: bool,
+    field_image: Image,
+    field_texture: Option<Texture2D>,
+    graph_image: Image,
+    graph_texture: Option<Texture2D>,
 }
 
 impl Field for Field2D {
-    fn render(&self) {
+    fn render(&mut self) {
         let offset_x = 50.0;
         let offset_y = 50.0;
-
-        let mut image = Image::gen_image_color(self.width() as u16, self.height() as u16, WHITE);
 
         for y in 0..self.height() {
             for x in 0..self.width() {
                 let u = *self.u.get((x, y)).unwrap();
                 let red = u as u8;
                 let green = (-u) as u8;
-                image.set_pixel(x as u32, y as u32, Color::from_rgba(red, green, 0, 255));
+                self.field_image.set_pixel(x as u32, y as u32, Color::from_rgba(red, green, 0, 255));
             }
         }
-
-        let texture = Texture2D::from_image(&image);
+        let field_texture = self.field_texture.get_or_insert_with(|| Texture2D::from_image(&self.field_image));
+        field_texture.update(&self.field_image);
         draw_texture_ex(
-            &texture,
+            field_texture,
             offset_x,
             offset_y,
             WHITE,
@@ -41,19 +43,24 @@ impl Field for Field2D {
             },
         );
 
-        let mut graph_image = Image::gen_image_color(self.width() as u16, 128, BLACK);
         let center_y = self.height() / 2;
-        let graph_h = graph_image.height as u32;
+        let graph_h = self.graph_image.height as u32;
+        // clear graph
+        for x in 0..self.width() {
+            for gy in 0..graph_h {
+                self.graph_image.set_pixel(x as u32, gy, BLACK);
+            }
+        }
         for x in 0..self.width() {
             let yx = (*self.u.get((x, center_y)).unwrap() / 7.1 + 64.).clamp(0., (graph_h - 1) as f32) as u32;
             let yv = ((*self.v.get((x, center_y)).unwrap() * 16.) + 64.).clamp(0., (graph_h - 1) as f32) as u32;
-            graph_image.set_pixel(x as u32, yx, RED);
-            graph_image.set_pixel(x as u32, yv, GREEN);
+            self.graph_image.set_pixel(x as u32, yx, RED);
+            self.graph_image.set_pixel(x as u32, yv, GREEN);
         }
-
-        let texture = Texture2D::from_image(&graph_image);
+        let graph_texture = self.graph_texture.get_or_insert_with(|| Texture2D::from_image(&self.graph_image));
+        graph_texture.update(&self.graph_image);
         draw_texture_ex(
-            &texture,
+            graph_texture,
             offset_x,
             offset_y + 450.,
             WHITE,
@@ -150,10 +157,16 @@ impl Field2D {
             Field2DInit::Traveling => Self::traveling(64, 3),
             Field2DInit::Standing => Self::standing(64, 3),
         };
+        let width = pixels.0.shape()[0];
+        let height = pixels.0.shape()[1];
         Self {
             u: pixels.0,
             v: pixels.1,
             vectorized,
+            field_image: Image::gen_image_color(width as u16, height as u16, WHITE),
+            field_texture: None,
+            graph_image: Image::gen_image_color(width as u16, 128, BLACK),
+            graph_texture: None,
         }
     }
 

@@ -18,6 +18,6 @@ impl Pixel {
 }
 
 pub trait Field {
-    fn render(&self);
+    fn render(&mut self);
     fn update(&mut self);
 }
