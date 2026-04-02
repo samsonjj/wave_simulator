@@ -43,14 +43,13 @@ impl Field for Field2D {
             },
         );
 
-
         let mut graph_image = Image::gen_image_color(self.width() as u16, 128, BLACK);
         let center_y = self.height() / 2;
         for x in 0..self.width() {
             let yx = (*self.u.get((x, center_y)).unwrap() / 7.1 + 64.) as u32;
             let yv = ((*self.v.get((x, center_y)).unwrap() * 16.) + 64.) as u32;
-            graph_image.set_pixel(x as u32, yx, RED); 
-            graph_image.set_pixel(x as u32, yv, GREEN); 
+            graph_image.set_pixel(x as u32, yx, RED);
+            graph_image.set_pixel(x as u32, yv, GREEN);
         }
 
         let texture = Texture2D::from_image(&graph_image);
@@ -121,9 +120,41 @@ impl Field for Field2D {
     }
 }
 
+#[derive(Copy, Clone)]
+pub enum Field2DInit {
+    Zero,
+    Centered,
+    Traveling,
+    Standing,
+}
+
+impl Field2DInit {
+    pub fn cycle(self) -> Self {
+        match self {
+            Self::Zero => Self::Centered,
+            Self::Centered => Self::Traveling,
+            Self::Traveling => Self::Standing,
+            Self::Standing => Self::Zero,
+        }
+    }
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Zero => "zero",
+            Self::Centered => "centered",
+            Self::Traveling => "traveling",
+            Self::Standing => "standing",
+        }
+    }
+}
+
 impl Field2D {
-    pub fn new(vectorized: bool) -> Self {
-        let pixels = Self::zero(64, 3);
+    pub fn new(vectorized: bool, init: Field2DInit) -> Self {
+        let pixels = match init {
+            Field2DInit::Zero => Self::zero(64, 64),
+            Field2DInit::Centered => Self::pixels_centered(64, 64),
+            Field2DInit::Traveling => Self::traveling(64, 64),
+            Field2DInit::Standing => Self::standing(64, 64),
+        };
         Self {
             u: pixels.0,
             v: pixels.1,
@@ -132,8 +163,8 @@ impl Field2D {
         }
     }
 
-    fn add_disturbance(mouse_pos: Vec2) {
-        let pixels_centered = Self::pixels_centered(64, 64);
+    fn add_disturbance(_mouse_pos: Vec2) {
+        let _pixels_centered = Self::pixels_centered(64, 64);
     }
 
     fn pixels_centered(width: usize, height: usize) -> (Array2<f32>, Array2<f32>) {
@@ -142,14 +173,16 @@ impl Field2D {
             let distance = center.distance(vec2(x as f32, y as f32)) * 0.3;
             if distance <= PI / 2. {
                 128. * distance.cos()
-            } else { 0. }
+            } else {
+                0.
+            }
         };
-        let v = |x: usize, y: usize| {
-            let distance = center.distance(vec2(x as f32, y as f32)) * 0.3;
-            if distance <= PI / 2. {
-                255. * distance.cos()
-            } else { 0. }
-        };
+        // let v = |x: usize, y: usize| {
+        //     let distance = center.distance(vec2(x as f32, y as f32)) * 0.3;
+        //     if distance <= PI / 2. {
+        //         255. * distance.cos()
+        //     } else { 0. }
+        // };
         Self::pixels_from_fn(width, height, f, |_, _| 0.)
     }
     fn zero(width: usize, height: usize) -> (Array2<f32>, Array2<f32>) {
@@ -157,7 +190,7 @@ impl Field2D {
     }
     fn traveling(width: usize, height: usize) -> (Array2<f32>, Array2<f32>) {
         let f = |x: usize, y: usize| {
-            let d = (x as f32 - (width  as f32 / 2.0)) / 10.0;
+            let d = (x as f32 - (width as f32 / 2.0)) / 10.0;
             if d.abs() < PI / 2. {
                 255. * (d.cos())
             } else {
@@ -167,12 +200,15 @@ impl Field2D {
         Self::pixels_from_fn(width, height, f, |_, _| 0.)
     }
     fn standing(width: usize, height: usize) -> (Array2<f32>, Array2<f32>) {
-        let f = |x: usize, y: usize| {
-            255. * (x as f32 / 64. * PI).cos()
-        };
+        let f = |x: usize, y: usize| 255. * (x as f32 / 64. * PI).cos();
         Self::pixels_from_fn(width, height, f, |_, _| 0.)
     }
-    fn pixels_from_fn(width: usize, height: usize, u_fun: impl Fn(usize, usize) -> f32, v_fun: impl Fn(usize, usize) -> f32) ->(Array2<f32>, Array2<f32>) { 
+    fn pixels_from_fn(
+        width: usize,
+        height: usize,
+        u_fun: impl Fn(usize, usize) -> f32,
+        v_fun: impl Fn(usize, usize) -> f32,
+    ) -> (Array2<f32>, Array2<f32>) {
         let mut u = Array2::default((width, height));
         let mut v = Array2::default((width, height));
         for x in 0..width {

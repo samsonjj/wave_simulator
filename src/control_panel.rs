@@ -17,6 +17,7 @@ const SHORTCUTS: &[(&str, &str)] = &[
     ("Space", "Play/Pause"),
     ("R", "Reset"),
     ("T", "Reset (vec)"),
+    ("N", "Next init"),
     (".", "Step"),
     ("Esc", "Quit"),
 ];
@@ -26,10 +27,14 @@ pub struct ControlPanel {}
 impl Observer for ControlPanel {
     fn render(&self, game: &crate::game::Game) {
         draw_text(
-            match game.state {
-                GameState::Running => "Running",
-                GameState::Paused => "Paused",
-            },
+            &format!(
+                "{} | init: {}",
+                match game.state {
+                    GameState::Running => "Running",
+                    GameState::Paused => "Paused",
+                },
+                game.init_variant.label()
+            ),
             Self::top_left().x,
             Self::top_left().y,
             20.0,

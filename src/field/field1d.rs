@@ -49,12 +49,34 @@ impl Field for Field1D {
     }
 }
 
+#[derive(Copy, Clone)]
+pub enum Field1DInit {
+    AtEnd,
+    Centered,
+}
+
+impl Field1DInit {
+    pub fn cycle(self) -> Self {
+        match self {
+            Self::AtEnd => Self::Centered,
+            Self::Centered => Self::AtEnd,
+        }
+    }
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::AtEnd => "at end",
+            Self::Centered => "centered",
+        }
+    }
+}
+
 impl Field1D {
-    pub fn new() -> Self {
+    pub fn new(init: Field1DInit) -> Self {
         Self {
-            // pixels: vec![vec![0f32; 16]]
-            // pixels: Self::pixels_centered(),
-            pixels: Self::pixels_at_end(),
+            pixels: match init {
+                Field1DInit::AtEnd => Self::pixels_at_end(),
+                Field1DInit::Centered => Self::pixels_centered(),
+            },
         }
     }
     fn pixels_centered() -> Vec<Vec<Pixel>> {

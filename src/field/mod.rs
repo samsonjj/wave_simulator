@@ -1,8 +1,8 @@
 mod field1d;
 mod field2d;
 
-pub use field1d::Field1D;
-pub use field2d::Field2D;
+pub use field1d::{Field1D, Field1DInit};
+pub use field2d::{Field2D, Field2DInit};
 
 use macroquad::prelude::*;
 
