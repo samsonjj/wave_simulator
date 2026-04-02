@@ -43,9 +43,10 @@ impl Field for Field2D {
 
         let mut graph_image = Image::gen_image_color(self.width() as u16, 128, BLACK);
         let center_y = self.height() / 2;
+        let graph_h = graph_image.height as u32;
         for x in 0..self.width() {
-            let yx = (*self.u.get((x, center_y)).unwrap() / 7.1 + 64.) as u32;
-            let yv = ((*self.v.get((x, center_y)).unwrap() * 16.) + 64.) as u32;
+            let yx = (*self.u.get((x, center_y)).unwrap() / 7.1 + 64.).clamp(0., (graph_h - 1) as f32) as u32;
+            let yv = ((*self.v.get((x, center_y)).unwrap() * 16.) + 64.).clamp(0., (graph_h - 1) as f32) as u32;
             graph_image.set_pixel(x as u32, yx, RED);
             graph_image.set_pixel(x as u32, yv, GREEN);
         }
