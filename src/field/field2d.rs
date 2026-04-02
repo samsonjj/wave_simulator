@@ -5,11 +5,13 @@ use macroquad::prelude::*;
 
 use super::{Field, Pixel};
 
-const PROPAGATION_SPEED: f32 = 0.01;
+const PROPAGATION_SPEED: f32 = 0.001;
+const TIME_STEP: f32 = 1.;
 
 pub struct Field2D {
     u: Array2<f32>,
     v: Array2<f32>,
+    time: f32,
     vectorized: bool,
 }
 
@@ -65,7 +67,10 @@ impl Field for Field2D {
     }
 
     fn update(&mut self) {
+        self.time += TIME_STEP;
         let mut field_deltas = vec![vec![0f32; self.height()]; self.width()];
+
+        *self.u.get_mut((0, 0)).unwrap() = (self.time / 100.).sin() * 64.;
 
         if self.vectorized {
             // the following 4 updates ensure reflective boundaries
@@ -153,6 +158,7 @@ impl Field2D {
         Self {
             u: pixels.0,
             v: pixels.1,
+            time: 0.,
             vectorized,
         }
     }
